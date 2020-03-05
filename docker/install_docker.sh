@@ -1,0 +1,166 @@
+#!/bin/bash
+
+# Change dir to script dir
+pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
+
+# Bring in askYN, require_sudo, etc.
+. ../acmlib.sh
+
+# Options and Usage
+# -----------------------------------
+usage() {
+	scriptName=$(basename "$0")
+	echo -n "${scriptName} [OPTION]...
+Install needed docker code to support AI Hunter.
+Options:
+  -g, --group-add       Add the current user to the 'docker' group
+  -r, --replace-shell	(Implies -g) When finished, replaces the current shell
+                        so the current user can control docker immediately.
+                        This will prevent any calling scripts from executing further.
+  -h, --help            Display this help and exit
+"
+}
+
+ADD_DOCKER_GROUP=false
+
+# Parse through command args to override values
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-g|--group-add)
+			ADD_DOCKER_GROUP=true
+			;;
+		-r|--replace-shell)
+			ADD_DOCKER_GROUP=true
+			REPLACE_SHELL=true
+			;;
+		-h|--help)
+			usage >&2
+			exit
+			;;
+		*)
+			;;
+	esac
+	shift
+done
+
+# Check architecture to ensure amd64
+if [ "$(arch)" != "x86_64" ]; then
+	echo "Docker installation is only supported on 64-bit CPU architectures."
+	exit 1
+fi
+
+require_sudo
+
+# Check the current docker install and store the return code
+./check_docker.sh
+DOCKER_CHECK=$?
+if [ "$DOCKER_CHECK" -gt 3 ]; then
+	# This may overwrite a file maintained by a package.
+	echo "An unsupported version of Docker appears to already be installed. It will be replaced."
+fi
+if [ "$DOCKER_CHECK" -eq 0 ]; then
+	echo "Docker appears to already be installed. Skipping."
+elif [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release ; then
+	#This configuration file is used in both Redhat RHEL and Centos distributions, so we're running under RHEL/Centos 7.x
+	# https://docs.docker.com/engine/installation/linux/docker-ce/centos/
+
+    $SUDO yum -q -e 0 makecache fast > /dev/null 2>&1
+
+	if rpm -q docker >/dev/null 2>&1 || rpm -q docker-common >/dev/null 2>&1 || rpm -q docker-selinux >/dev/null 2>&1 || rpm -q docker-engine >/dev/null 2>&1 ; then
+		echo -n "One or more of these packages are installed: docker, docker-common, docker-selinux, and/or docker-engine. The docker website encourages us to remove these before installing docker-ce. Would you like to remove these older packages (recommended: yes)"
+		if askYN ; then
+			$SUDO yum -y -q -e 0 remove docker docker-common docker-selinux docker-engine
+		else
+			echo "You chose not to remove the older docker packages.  The install may not succeed."
+		fi
+	fi
+
+	$SUDO yum -y -q -e 0 install yum-utils device-mapper-persistent-data lvm2 shadow-utils
+
+	$SUDO yum-config-manager -q --enable extras >/dev/null
+
+	if [ ! -f /etc/yum.repos.d/docker-ce.repo ]; then
+		$SUDO yum-config-manager -q --add-repo https://download.docker.com/linux/centos/docker-ce.repo > /dev/null
+	fi
+
+	$SUDO wget -q https://download.docker.com/linux/centos/gpg -O ~/DOCKER-GPG-KEY
+	$SUDO rpm --import ~/DOCKER-GPG-KEY
+
+	$SUDO yum -y -q -e 0 install docker-ce
+elif grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
+	### Install Docker on Ubuntu ###
+	# https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
+
+	echo "Installing Docker package repo..."
+	$SUDO apt-get -qq update > /dev/null 2>&1
+	$SUDO apt-get install -qq \
+		apt-transport-https \
+		ca-certificates \
+		curl \
+		software-properties-common
+
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | $SUDO apt-key add -
+
+	$SUDO add-apt-repository \
+		"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+		$(lsb_release -cs) \
+		stable"
+
+	echo "Installing latest Docker version..."
+	$SUDO apt-get -qq update > /dev/null 2>&1
+	$SUDO apt-get install -qq docker-ce
+else
+	echo "This system does not appear to be a Centos 7.x, RHEL 7.x, or Ubuntu Linux system.  Unable to install docker."
+	exit 1
+fi
+
+# Start the Docker service:
+echo "Starting the docker service..."
+if grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
+	$SUDO systemctl start docker
+	$SUDO systemctl enable docker
+elif [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release  ; then
+	$SUDO service docker start
+fi
+echo "Docker service started."
+
+./check_docker-compose.sh
+# Check the current docker-compose install and store the return code
+DOCKER_COMPOSE_CHECK=$?
+if [ "$DOCKER_COMPOSE_CHECK" -gt 3 ]; then
+	# This may overwrite a file maintained by a package.
+	echo "An unsupported version of Docker-Compose appears to already be installed. It will be replaced."
+elif [ "$DOCKER_COMPOSE_CHECK" -eq 0 ]; then
+	echo "Docker-Compose appears to already be installed. Skipping."
+else
+	### Install Docker-Compose ###
+	# https://docs.docker.com/compose/install/#install-compose
+	DOCKER_COMPOSE_VERSION="1.21.2"
+
+	echo "Installing Docker-Compose v${DOCKER_COMPOSE_VERSION}..."
+	$SUDO curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+	$SUDO chmod +x /usr/bin/docker-compose
+fi
+
+if [ "${ADD_DOCKER_GROUP}" = "true" ]; then
+	# Add current user to docker group
+	echo "Adding current user to docker group..."
+	#$SUDO groupadd docker
+	$SUDO usermod -aG docker $USER
+
+	if [ "${REPLACE_SHELL}" = "true" ]; then
+		echo "Docker installation complete. You should have access to the 'docker' and 'docker-compose' commands immediately."
+		# Hack to activate the docker group on the current user without logging out.
+		# Downside is it completely replaces the shell and prevents calling scripts from continuing.
+		# https://superuser.com/a/853897
+		exec sg docker newgrp `id -gn`
+	fi
+
+	echo "You will need to login again for these changes to take effect."
+	echo "Docker installation complete. You should have access to the 'docker' and 'docker-compose' commands once you log out and back in."
+else
+	echo "Docker installation complete. 'docker' and 'docker-compose' must be run using sudo or the root account unless you have added your user to the 'docker' group."
+fi
+
+# Change back to original directory
+popd > /dev/null
