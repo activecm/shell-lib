@@ -277,21 +277,21 @@ ensure_common_tools_installed () {
 
     require_sudo
 
-    local ubuntu_tools="gdb git wget curl make netcat realpath lsb-release rsync tar"
-    local centos_tools="gdb git wget curl make nmap-ncat coreutils iproute redhat-lsb-core rsync tar"
-    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent git grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr wc wget"
+    local ubuntu_tools="gdb git wget curl make netcat realpath lsb-release rsync unzip tar"
+    local centos_tools="gdb git wget curl make nmap-ncat coreutils iproute redhat-lsb-core rsync unzip tar"
+    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent git grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
     if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
         #We have apt-get, good.
 
-	#Check Ubuntu version, adjust package list for 18.04
+        #Check Ubuntu version, adjust package list for 18.04
 
-	# Source os-release to avoid using lsb_release.
-	# Relevant variable is $VERSION_CODENAME.
-	. /etc/os-release
-	if [ "$VERSION_CODENAME" = "bionic" ]; then
-		# can also be done with `ubuntu_tools="${ubuntu_tools/realpath/coreutils}"`
-		ubuntu_tools="gdb git wget curl make netcat coreutils lsb-release rsync tar"
-	fi
+        # Source os-release to avoid using lsb_release.
+        # Relevant variable is $VERSION_CODENAME.
+        . /etc/os-release
+        if [ "$VERSION_CODENAME" = "bionic" ]; then
+            # can also be done with `ubuntu_tools="${ubuntu_tools/realpath/coreutils}"`
+            ubuntu_tools="gdb git wget curl make netcat coreutils lsb-release rsync unzip tar"
+        fi
 
         $SUDO apt-get -qq update > /dev/null 2>&1
 		while ! $SUDO apt-get -qq install $ubuntu_tools ; do
