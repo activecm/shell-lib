@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Change dir to script dir
-pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
+pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" > /dev/null
 
 # Bring in askYN, require_sudo, etc.
 . ../acmlib.sh
@@ -51,7 +51,7 @@ fi
 
 require_sudo
 
-# Check the current docker install and store the return code
+# Store the exit code
 ./check_docker.sh
 DOCKER_CHECK=$?
 if [ "$DOCKER_CHECK" -gt 3 ]; then
@@ -87,7 +87,7 @@ elif [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release ; th
 	$SUDO rpm --import ~/DOCKER-GPG-KEY
 
 	$SUDO yum -y -q -e 0 install docker-ce
-elif grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
+elif [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
 	### Install Docker on Ubuntu ###
 	# https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
 
@@ -116,7 +116,7 @@ fi
 
 # Start the Docker service:
 echo "Starting the docker service..."
-if grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
+if [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
 	$SUDO systemctl start docker
 	$SUDO systemctl enable docker
 elif [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release  ; then
@@ -125,7 +125,7 @@ fi
 echo "Docker service started."
 
 ./check_docker-compose.sh
-# Check the current docker-compose install and store the return code
+# Store the exit code
 DOCKER_COMPOSE_CHECK=$?
 if [ "$DOCKER_COMPOSE_CHECK" -gt 3 ]; then
 	# This may overwrite a file maintained by a package.
@@ -135,7 +135,7 @@ elif [ "$DOCKER_COMPOSE_CHECK" -eq 0 ]; then
 else
 	### Install Docker-Compose ###
 	# https://docs.docker.com/compose/install/#install-compose
-	DOCKER_COMPOSE_VERSION="1.21.2"
+	DOCKER_COMPOSE_VERSION="1.25.5"
 
 	echo "Installing Docker-Compose v${DOCKER_COMPOSE_VERSION}..."
 	$SUDO curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose

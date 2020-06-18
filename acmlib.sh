@@ -56,6 +56,24 @@ status () {
 	#read -e JUNK <&2
 }
 
+#### Password Generation
+
+generate_password() {
+	# Allow custom password sizes, but default to 50
+	SZ=${1:-50}
+	if [ -x "$(command -v python2)" ]; then
+		python2 -c "import os, string as s; print ''.join([(s.letters+s.digits+'_')[ord(i) % 63] for i in os.urandom($SZ)])"
+	elif [ -x "$(command -v python3)" ]; then
+		python3 -c "import os, string as s; print(''.join([(s.ascii_letters+s.digits+'_')[i % 63] for i in os.urandom($SZ)]))"
+	elif [ -x "$(command -v dd)" ] && [ -x "$(command -v base32)" ]; then
+		dd if=/dev/urandom bs=$SZ count=1 2>/dev/null | base32 --wrap=0
+	elif [ -x "$(command -v perl)" ]; then
+		# Perl's "rand" isn't cryptographically secure
+		# http://sysadminsjourney.com/content/2009/09/16/random-password-generation-perl-one-liner/
+		perl -le 'print map { (a..z,A..Z,0..9)[rand 62] } 0..pop' $SZ
+	fi
+}
+
 #### Environment Variables
 
 normalize_environment () {
@@ -168,7 +186,7 @@ require_sse4_2 () {
     return 0
 }
 
-require_free_space() {
+require_free_space_MB() {
         # An array of directories consisting of all but the last function argument
 	local dirs="${*%${!#}}"
         # The number of megabytes to check for is in the last function argument
@@ -176,8 +194,38 @@ require_free_space() {
 
 	# Check for free space:
 	for one_dir in $dirs; do
-		[ $(df "$one_dir" -P -BM 2>/dev/null | grep -v 'Avail' | awk '{print $4}' | tr -dc '[0-9]') -ge $mb ] || fail "$one_dir has less than ${mb}MB of free space!"
-		echo2 "$one_dir has at least ${mb}MB of free space, good."
+		if [ $(df "$one_dir" -P -BM 2>/dev/null | grep -v 'Avail' | awk '{print $4}' | tr -dc '[0-9]') -ge $mb ]; then
+			echo2 "$one_dir has at least ${mb}MB of free space, good."
+		else
+			fail "$one_dir has less than ${mb}MB of free space!"
+		fi
+	done
+
+	return 0
+}
+
+warn_free_space_GB() {
+	# Some directories will require a large amount of storage space, but only after
+	# Zeek and AI-Hunter have been running for long enough to generate a good
+	# amount of logs and databases. Thus, we only want to WARN the user at the end
+	# without pausing the installer.
+
+	# An array of directories consisting of all but the last function argument:
+	local dirs="${*%${!#}}"
+	# The number of gigabytes to check for is in the last function argument:
+	local gb="${@:$#}"
+
+	# Check for free space:
+	for one_dir in $dirs; do
+		if [ $(df "$one_dir" -P -BG 2>/dev/null | grep -v 'Avail' | awk '{print $4}' | tr -dc '[0-9]') -lt $gb ]; then
+			# Print a warning. Use ANSI escape sequence [93m for bright yello, and [0m to reset:
+			echo
+			echo -e "\e[93mWARNING\e[0m: $one_dir does not have at least ${gb}GB of free space."
+			echo "         AI-Hunter will still install successfully,"
+			echo "         but you may need to frequently remove old data from $one_dir."
+			echo "         Consider increasing the amount of space available in $one_dir."
+			echo
+		fi
 	done
 
 	return 0
@@ -314,5 +362,32 @@ ensure_common_tools_installed () {
     fi
 
     require_util $required_tools
+    return 0
+}
+
+move_working_directory () {
+    # Moves the working directory to another path given by $1.
+    # If the running directory is /home/user/AIH-latest, then
+    # calling move_working_directory '/opt' will result in a working
+    # directory of /opt/AIH-latest.
+    # If the current user does not have sufficient permissions to move
+    # the working directory to the target directory, the files are moved
+    # using sudo and root is given ownership of the resulting files.
+
+    local current_directory=`pwd -P`
+    local target_directory="$1/$(basename $current_directory)"
+
+    local move_dir_sudo=""
+    if ! can_write_or_create "$1"; then
+        require_sudo
+        $SUDO mkdir -p "$1"
+        $SUDO mv "$current_directory" "$1"
+        $SUDO chown -R root:root "$target_directory"
+    else
+        mkdir -p "$1"
+        mv "$current_directory" "$1"
+    fi
+
+    cd "$target_directory"
     return 0
 }
