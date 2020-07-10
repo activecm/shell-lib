@@ -375,7 +375,7 @@ move_working_directory () {
     # using sudo and root is given ownership of the resulting files.
 
     local current_directory=`pwd -P`
-    local target_directory="$1/$(basename $current_directory)"
+    local target_directory="$1/$(basename "$current_directory")"
 
     local move_dir_sudo=""
     if ! can_write_or_create "$1"; then
