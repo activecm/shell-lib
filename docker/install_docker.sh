@@ -116,12 +116,8 @@ fi
 
 # Start the Docker service:
 echo "Starting the docker service..."
-if [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
-	$SUDO systemctl start docker
-	$SUDO systemctl enable docker
-elif [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release  ; then
-	$SUDO service docker start
-fi
+$SUDO systemctl start docker
+$SUDO systemctl enable docker
 echo "Docker service started."
 
 ./check_docker-compose.sh
