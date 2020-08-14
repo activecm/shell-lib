@@ -126,7 +126,8 @@ DOCKER_COMPOSE_CHECK=$?
 if [ "$DOCKER_COMPOSE_CHECK" -gt 3 ]; then
 	# This may overwrite a file maintained by a package.
 	echo "An unsupported version of Docker-Compose appears to already be installed. It will be replaced."
-elif [ "$DOCKER_COMPOSE_CHECK" -eq 0 ]; then
+fi
+if [ "$DOCKER_COMPOSE_CHECK" -eq 0 ]; then
 	echo "Docker-Compose appears to already be installed. Skipping."
 else
 	### Install Docker-Compose ###
