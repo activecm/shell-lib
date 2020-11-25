@@ -134,7 +134,7 @@ else
 	DOCKER_COMPOSE_VERSION="1.25.5"
 
 	echo "Installing Docker-Compose v${DOCKER_COMPOSE_VERSION}..."
-	$SUDO curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+	$SUDO -E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
 	$SUDO chmod +x /usr/bin/docker-compose
 fi
 
