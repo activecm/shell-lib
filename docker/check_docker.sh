@@ -22,9 +22,10 @@ VERSION_MINOR="$(echo $VERSION | cut -d' ' -f2)"
 if [ "$VERSION_MAJOR" -lt "$MIN_VERSION_MAJOR" ] ||
 	[ "$VERSION_MAJOR" -eq "$MIN_VERSION_MAJOR" -a "$VERSION_MINOR" -lt "$MIN_VERSION_MINOR" ]; then
 	exit 4
-elif [ "$VERSION_MAJOR" -gt "$MAX_VERSION_MAJOR" ] ||
-	[ "$VERSION_MAJOR" -eq "$MAX_VERSION_MAJOR" -a "$VERSION_MINOR" -gt "$MAX_VERSION_MINOR" ]; then
-	exit 5
+# Disabled in https://github.com/activecm/shell-lib/pull/9
+# elif [ "$VERSION_MAJOR" -gt "$MAX_VERSION_MAJOR" ] ||
+# 	[ "$VERSION_MAJOR" -eq "$MAX_VERSION_MAJOR" -a "$VERSION_MINOR" -gt "$MAX_VERSION_MINOR" ]; then
+# 	exit 5
 else
 	exit 0
 fi
