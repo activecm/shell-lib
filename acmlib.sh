@@ -325,34 +325,44 @@ ensure_common_tools_installed () {
 
     require_sudo
 
-    local ubuntu_tools="gdb wget curl make netcat realpath lsb-release rsync unzip tar"
+    local ubuntu_tools="gdb wget curl make netcat lsb-release rsync unzip tar"
     local centos_tools="gdb wget curl make nmap-ncat coreutils iproute redhat-lsb-core rsync unzip tar"
     local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
     if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
         #We have apt-get, good.
 
-        #Check Ubuntu version, adjust package list for 18.04
+        if ! type -f realpath >/dev/null 2>&1 ; then
+            #If realpath isn't installed, we need to install it.
+            #Check Ubuntu version
 
-        # Source os-release to avoid using lsb_release.
-        # Relevant variable is $VERSION_CODENAME.
-        . /etc/os-release
-        if [ "$VERSION_CODENAME" = "bionic" ]; then
-            # can also be done with `ubuntu_tools="${ubuntu_tools/realpath/coreutils}"`
-            ubuntu_tools="gdb wget curl make netcat coreutils lsb-release rsync unzip tar"
+            # Source os-release to avoid using lsb_release.
+            # Relevant variable is $VERSION_CODENAME.
+            . /etc/os-release
+            if [ "$VERSION_CODENAME" = "xenial" ]; then
+                #Adjust package list for 16.04
+                ubuntu_tools="$ubuntu_tools realpath"
+            else
+                #Adjust package list for 18.04 and above
+                ubuntu_tools="$ubuntu_tools coreutils"
+            fi
         fi
 
-        $SUDO apt-get -qq update > /dev/null 2>&1
-		while ! $SUDO apt-get -qq install $ubuntu_tools ; do
+	#We're returning to showing stderr because using "-qq" and redirecting stderr to /dev/null meant the user could never see why an install was failing.
+        while ! $SUDO apt-get -q -y update >/dev/null ; do
+            echo2 "Error updating package metadata, perhaps because a system update is running; will wait 60 seconds and try again."
+            sleep 60
+        done
+        while ! $SUDO apt-get -q -y install $ubuntu_tools >/dev/null ; do
             echo2 "Error installing packages, perhaps because a system update is running; will wait 60 seconds and try again."
             sleep 60
-		done
+        done
     elif [ -x /usr/bin/yum -a -x /bin/rpm ]; then
         #We have yum, good.
 
         #Make sure we have yum-config-manager. It might be in yum-utils.
         if [ ! -x /bin/yum-config-manager ]; then
-			$SUDO yum -y -q -e 0 install yum-utils
-		fi
+            $SUDO yum -y -q -e 0 install yum-utils
+        fi
 
         $SUDO yum -q -e 0 makecache > /dev/null 2>&1
         #Yum takes care of the lock loop for us
