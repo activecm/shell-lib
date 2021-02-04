@@ -1,4 +1,4 @@
-# Active Coutermeasures Script Library
+# Active Countermeasures Script Library
 # This library contains commonly used helper functions.
 
 #### User Interface
@@ -325,9 +325,9 @@ ensure_common_tools_installed () {
 
     require_sudo
 
-    local ubuntu_tools="gdb git wget curl make netcat realpath lsb-release rsync unzip tar"
-    local centos_tools="gdb git wget curl make nmap-ncat coreutils iproute redhat-lsb-core rsync unzip tar"
-    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent git grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
+    local ubuntu_tools="gdb wget curl make netcat realpath lsb-release rsync unzip tar"
+    local centos_tools="gdb wget curl make nmap-ncat coreutils iproute redhat-lsb-core rsync unzip tar"
+    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
     if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
         #We have apt-get, good.
 
@@ -338,7 +338,7 @@ ensure_common_tools_installed () {
         . /etc/os-release
         if [ "$VERSION_CODENAME" = "bionic" ]; then
             # can also be done with `ubuntu_tools="${ubuntu_tools/realpath/coreutils}"`
-            ubuntu_tools="gdb git wget curl make netcat coreutils lsb-release rsync unzip tar"
+            ubuntu_tools="gdb wget curl make netcat coreutils lsb-release rsync unzip tar"
         fi
 
         $SUDO apt-get -qq update > /dev/null 2>&1
