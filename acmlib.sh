@@ -231,6 +231,50 @@ warn_free_space_GB() {
 	return 0
 }
 
+warn_network_in_use() {
+	# Docker will claim networks if they're specified in a COMPOSE_FILE.
+	# Customers have been known to lose network connectivity to VPNs
+	# if the VPN uses the claimed subnet. This function checks for and
+	# warns the user if subnets could be claimed during installation.
+
+	# Set up local variables for arguments, ip routes, and grep matches
+	local subnets="$@"
+	local routes=`ip route`
+	local matches=""
+
+	# Also check against docker networks
+	local docker_networks=`for i in $(sudo docker network ls -q); do sudo docker network inspect -f '{{(index .IPAM.Config 0).Subnet}}' $i 2>/dev/null; done`
+
+	#echo $docker_networks
+
+	# Check if each argument is found in the ip route output. If so,
+	# append to the string
+	for net in $subnets; do
+		$(echo $routes | grep -q "$net") &&
+			! $(echo $docker_networks | grep -q "$net") &&
+			matches="${matches}             $net\n"
+	done
+
+	# Output warning if matches string is longer than 0 characters
+	if [ ${#matches} -gt 0 ]; then
+		echo
+		echo -e "\e[93mWARNING\e[0m: The installer checks for subnets in use which may be claimed"
+		echo "         by the Docker configuration. The following subnet(s) were"
+		echo "         found to be in use by the system:"
+		echo -e "\n$matches"
+		echo "         If network connectivity is disrupted (such as VPN connections),"
+		echo "         check the Docker configuration and change to a different subnet."
+		echo
+		echo "         For more information, please refer to our FAQ for more information:"
+		echo "         https://portal.activecountermeasures.com/support/faq/?Display_FAQ=###"
+		echo
+		echo "Press Enter to Continue..."
+		read -e JUNK <&2
+	fi
+
+	return 0
+}
+
 check_os_is_centos () {
     [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release
 }
