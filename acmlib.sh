@@ -266,7 +266,7 @@ warn_network_in_use() {
 		echo "         check the Docker configuration and change to a different subnet."
 		echo
 		echo "         For more information, please refer to our FAQ for more information:"
-		echo "         https://portal.activecountermeasures.com/support/faq/?Display_FAQ=###"
+		echo "         https://portal.activecountermeasures.com/support/faq/?Display_FAQ=3350"
 		echo
 		echo "Press Enter to Continue..."
 		read -e JUNK <&2
