@@ -6,34 +6,34 @@
 askYN () {
     # Prints a question mark, reads repeatedly until the user
     # repsonds with t/T/y/Y or f/F/n/N.
-	TESTYN=""
-	while [ "$TESTYN" != 'Y' ] && [ "$TESTYN" != 'N' ] ; do
-		echo -n '? ' >&2
-		read -e TESTYN <&2 || :
-		case $TESTYN in
-		T*|t*|Y*|y*)		TESTYN='Y'	;;
-		F*|f*|N*|n*)		TESTYN='N'	;;
-		esac
-	done
+    TESTYN=""
+    while [ "$TESTYN" != 'Y' ] && [ "$TESTYN" != 'N' ] ; do
+        echo -n '? ' >&2
+        read -e TESTYN <&2 || :
+        case $TESTYN in
+        T*|t*|Y*|y*)		TESTYN='Y'	;;
+        F*|f*|N*|n*)		TESTYN='N'	;;
+        esac
+    done
 
-	if [ "$TESTYN" = 'Y' ]; then
-		return 0 #True
-	else
-		return 1 #False
-	fi
+    if [ "$TESTYN" = 'Y' ]; then
+        return 0 #True
+    else
+        return 1 #False
+    fi
 }
 
 fail () {
     # Displays the passed in error and asks the user if they'd like to continue
     # the script. Will exit with error code 1 if the user stops the script.
-	echo "$*" >&2
-	echo "This is normally an unrecoverable problem, and we recommend fixing the problem and restarting the script. Please contact technical support for help in resolving the issue. If you feel the script should continue, enter   Y   and the script will attempt to finish. Entering   N    will cause this script to exit." >&2
-	if askYN ; then
-		echo "Script will continue at user request. This may not result in a working configuration." >&2
-		sleep 5
-	else
-		exit 1
-	fi
+    echo "$*" >&2
+    echo "This is normally an unrecoverable problem, and we recommend fixing the problem and restarting the script. Please contact technical support for help in resolving the issue. If you feel the script should continue, enter   Y   and the script will attempt to finish. Entering   N    will cause this script to exit." >&2
+    if askYN ; then
+        echo "Script will continue at user request. This may not result in a working configuration." >&2
+        sleep 5
+    else
+        exit 1
+    fi
 }
 
 prompt2 () {
@@ -49,29 +49,29 @@ echo2 () {
 
 status () {
     echo2 ""
-	echo2 "================ $* ================"
-	# DEBUG AID: Uncomment the lines below to enable pausing the install script
+    echo2 "================ $* ================"
+    # DEBUG AID: Uncomment the lines below to enable pausing the install script
     # at each status marker
     #echo2 "Press enter to continue"
-	#read -e JUNK <&2
+    #read -e JUNK <&2
 }
 
 #### Password Generation
 
 generate_password() {
-	# Allow custom password sizes, but default to 50
-	SZ=${1:-50}
-	if [ -x "$(command -v python2)" ]; then
-		python2 -c "import os, string as s; print ''.join([(s.letters+s.digits+'_')[ord(i) % 63] for i in os.urandom($SZ)])"
-	elif [ -x "$(command -v python3)" ]; then
-		python3 -c "import os, string as s; print(''.join([(s.ascii_letters+s.digits+'_')[i % 63] for i in os.urandom($SZ)]))"
-	elif [ -x "$(command -v dd)" ] && [ -x "$(command -v base32)" ]; then
-		dd if=/dev/urandom bs=$SZ count=1 2>/dev/null | base32 --wrap=0
-	elif [ -x "$(command -v perl)" ]; then
-		# Perl's "rand" isn't cryptographically secure
-		# http://sysadminsjourney.com/content/2009/09/16/random-password-generation-perl-one-liner/
-		perl -le 'print map { (a..z,A..Z,0..9)[rand 62] } 0..pop' $SZ
-	fi
+    # Allow custom password sizes, but default to 50
+    SZ=${1:-50}
+    if [ -x "$(command -v python2)" ]; then
+        python2 -c "import os, string as s; print ''.join([(s.letters+s.digits+'_')[ord(i) % 63] for i in os.urandom($SZ)])"
+    elif [ -x "$(command -v python3)" ]; then
+        python3 -c "import os, string as s; print(''.join([(s.ascii_letters+s.digits+'_')[i % 63] for i in os.urandom($SZ)]))"
+    elif [ -x "$(command -v dd)" ] && [ -x "$(command -v base32)" ]; then
+        dd if=/dev/urandom bs=$SZ count=1 2>/dev/null | base32 --wrap=0
+    elif [ -x "$(command -v perl)" ]; then
+        # Perl's "rand" isn't cryptographically secure
+        # http://sysadminsjourney.com/content/2009/09/16/random-password-generation-perl-one-liner/
+        perl -le 'print map { (a..z,A..Z,0..9)[rand 62] } 0..pop' $SZ
+    fi
 }
 
 #### Environment Variables
@@ -125,14 +125,14 @@ master_ssh() {
     if ssh -o 'ControlPath=~/.ssh/sockets/master-%r@%h:%p' -O check "$@" >/dev/null 2>&1 ; then
     #If the master is currently running kill it so the socket is available for use.
         kill_master_ssh "$@"
-	fi
-	ssh -o 'ControlPath=~/.ssh/sockets/master-%r@%h:%p' -o 'ControlMaster=yes' -o 'ControlPersist=7200' -f "$@" 'sleep 7200'
+    fi
+    ssh -o 'ControlPath=~/.ssh/sockets/master-%r@%h:%p' -o 'ControlMaster=yes' -o 'ControlPersist=7200' -f "$@" 'sleep 7200'
 }
 
 kill_master_ssh () {
     #Kills a persistent ssh socket and all associated connections
-	#Note that this kills not only the master but also any remaining client connections as well.
-	ssh -o 'ControlPath=~/.ssh/sockets/master-%r@%h:%p' -O 'exit' "$@" >/dev/null 2>&1
+    #Note that this kills not only the master but also any remaining client connections as well.
+    ssh -o 'ControlPath=~/.ssh/sockets/master-%r@%h:%p' -O 'exit' "$@" >/dev/null 2>&1
 }
 
 get_master_ssh_flags () {
@@ -167,13 +167,13 @@ caseInsensitiveElementIn () {
 require_file () {
     #Stops the script if any of the files or directories listed do not exist.
 
-	while [ -n "$1" ]; do
-		if [ ! -e "$1" ]; then
-			fail "Missing object $1. Please install it."
-		fi
-		shift
-	done
-	return 0							#True, all objects are here
+    while [ -n "$1" ]; do
+        if [ ! -e "$1" ]; then
+            fail "Missing object $1. Please install it."
+        fi
+        shift
+    done
+    return 0							#True, all objects are here
 }
 
 require_sse4_2 () {
@@ -188,55 +188,55 @@ require_sse4_2 () {
 
 require_free_space_MB() {
         # An array of directories consisting of all but the last function argument
-	local dirs="${*%${!#}}"
+    local dirs="${*%${!#}}"
         # The number of megabytes to check for is in the last function argument
-	local mb="${@:$#}"
+    local mb="${@:$#}"
 
-	# Check for free space:
-	for one_dir in $dirs; do
-		if [ $(df "$one_dir" -P -BM 2>/dev/null | grep -v 'Avail' | awk '{print $4}' | tr -dc '[0-9]') -ge $mb ]; then
-			echo2 "$one_dir has at least ${mb}MB of free space, good."
-		else
-			fail "$one_dir has less than ${mb}MB of free space!"
-		fi
-	done
+    # Check for free space:
+    for one_dir in $dirs; do
+        if [ $(df "$one_dir" -P -BM 2>/dev/null | grep -v 'Avail' | awk '{print $4}' | tr -dc '[0-9]') -ge $mb ]; then
+            echo2 "$one_dir has at least ${mb}MB of free space, good."
+        else
+            fail "$one_dir has less than ${mb}MB of free space!"
+        fi
+    done
 
-	return 0
+    return 0
 }
 
 warn_free_space_GB() {
-	# Some directories will require a large amount of storage space, but only after
-	# Zeek and AI-Hunter have been running for long enough to generate a good
-	# amount of logs and databases. Thus, we only want to WARN the user at the end
-	# without pausing the installer.
+    # Some directories will require a large amount of storage space, but only after
+    # Zeek and AI-Hunter have been running for long enough to generate a good
+    # amount of logs and databases. Thus, we only want to WARN the user at the end
+    # without pausing the installer.
 
-	# An array of directories consisting of all but the last function argument:
-	local dirs="${*%${!#}}"
-	# The number of gigabytes to check for is in the last function argument:
-	local gb="${@:$#}"
+    # An array of directories consisting of all but the last function argument:
+    local dirs="${*%${!#}}"
+    # The number of gigabytes to check for is in the last function argument:
+    local gb="${@:$#}"
 
-	# Check for free space:
-	for one_dir in $dirs; do
-		if [ $(df "$one_dir" -P -BG 2>/dev/null | grep -v 'Avail' | awk '{print $4}' | tr -dc '[0-9]') -lt $gb ]; then
-			# Print a warning. Use ANSI escape sequence [93m for bright yello, and [0m to reset:
-			echo
-			echo -e "\e[93mWARNING\e[0m: $one_dir does not have at least ${gb}GB of free space."
-			echo "         AI-Hunter will still install successfully,"
-			echo "         but you may need to frequently remove old data from $one_dir."
-			echo "         Consider increasing the amount of space available in $one_dir."
-			echo
-		fi
-	done
+    # Check for free space:
+    for one_dir in $dirs; do
+        if [ $(df "$one_dir" -P -BG 2>/dev/null | grep -v 'Avail' | awk '{print $4}' | tr -dc '[0-9]') -lt $gb ]; then
+            # Print a warning. Use ANSI escape sequence [93m for bright yello, and [0m to reset:
+            echo
+            echo -e "\e[93mWARNING\e[0m: $one_dir does not have at least ${gb}GB of free space."
+            echo "         AI-Hunter will still install successfully,"
+            echo "         but you may need to frequently remove old data from $one_dir."
+            echo "         Consider increasing the amount of space available in $one_dir."
+            echo
+        fi
+    done
 
-	return 0
+    return 0
 }
 
 warn_docker_network_in_use() {
-	# Docker will claim networks if they're specified in a COMPOSE_FILE,
+    # Docker will claim networks if they're specified in a COMPOSE_FILE,
     # otherwise, Docker will claim a network from the pool defined in /etc/docker/daemon.json
-	# Customers have been known to lose network connectivity to VPNs
-	# if the VPN uses the claimed subnet. This function checks for and
-	# warns the user if subnets could be claimed during installation.
+    # Customers have been known to lose network connectivity to VPNs
+    # if the VPN uses the claimed subnet. This function checks for and
+    # warns the user if subnets could be claimed during installation.
 
     # If the user has configured the Docker daemon to use a non-default address pool,
     # disable the warning. The user has likely fixed any colliding network issues already.
@@ -248,45 +248,45 @@ warn_docker_network_in_use() {
 
     require_sudo
 
-	# Set up local variables for arguments, ip routes, and grep matches
-	local subnets="$@"
-	local routes=`ip route`
-	local matches=""
+    # Set up local variables for arguments, ip routes, and grep matches
+    local subnets="$@"
+    local routes=`ip route`
+    local matches=""
     if type docker > /dev/null 2>&1; then
         # Also check against docker networks
         local docker_networks=`for i in $($SUDO docker network ls -q); do $SUDO docker network inspect -f '{{if lt 0 (len .IPAM.Config)}}{{(index .IPAM.Config 0).Subnet}}{{end}}' $i; done`
     else
         local docker_networks=""
     fi
-	#echo $docker_networks
+    #echo $docker_networks
 
-	# Check if each argument is found in the ip route output. If so,
-	# append to the string
-	for net in $subnets; do
+    # Check if each argument is found in the ip route output. If so,
+    # append to the string
+    for net in $subnets; do
         if echo $routes | grep -q "$net" && ! echo $docker_networks | grep -q "$net"; then
-			matches="${matches}             $net\n"
+            matches="${matches}             $net\n"
         fi
-	done
+    done
 
-	# Output warning if matches string is longer than 0 characters
-	if [ ${#matches} -gt 0 ]; then
-		echo
-		echo -e "\e[93mWARNING\e[0m: This script checks for subnets in use which may be claimed"
-		echo "         by the Docker configuration. The following subnet(s) were"
-		echo "         found to be in use by the system:"
-		echo -e "\n$matches"
+    # Output warning if matches string is longer than 0 characters
+    if [ ${#matches} -gt 0 ]; then
+        echo
+        echo -e "\e[93mWARNING\e[0m: This script checks for subnets in use which may be claimed"
+        echo "         by the Docker configuration. The following subnet(s) were"
+        echo "         found to be in use by the system:"
+        echo -e "\n$matches"
         echo "         This script may disrupt network connectivity (such as VPN connections)."
-		echo "         To prevent this, exit this script and edit the default address pool"
+        echo "         To prevent this, exit this script and edit the default address pool"
         echo "         used by Docker."
-		echo
-		echo "         For more information, please refer to our FAQ for more information:"
-		echo "         https://portal.activecountermeasures.com/support/faq/?Display_FAQ=3350"
-		echo
-		echo "Press Enter to Continue..."
-		read -e JUNK <&2
-	fi
+        echo
+        echo "         For more information, please refer to our FAQ for more information:"
+        echo "         https://portal.activecountermeasures.com/support/faq/?Display_FAQ=3350"
+        echo
+        echo "Press Enter to Continue..."
+        read -e JUNK <&2
+    fi
 
-	return 0
+    return 0
 }
 
 check_os_is_centos () {
@@ -302,12 +302,12 @@ require_supported_os () {
 
     #TODO: Test for minimum kernel version
     if check_os_is_centos ; then
-		echo2 "CentOS or Redhat 7 installation detected, good."
-	elif check_os_is_ubuntu ; then
-		echo2 "Ubuntu installation detected, good."
-	else
-		fail "This system does not appear to be a CentOS/ RHEL 7 or Ubuntu system"
-	fi
+        echo2 "CentOS or Redhat 7 installation detected, good."
+    elif check_os_is_ubuntu ; then
+        echo2 "Ubuntu installation detected, good."
+    else
+        fail "This system does not appear to be a CentOS/ RHEL 7 or Ubuntu system"
+    fi
     return 0
 }
 
@@ -405,7 +405,7 @@ ensure_common_tools_installed () {
             fi
         fi
 
-	#We're returning to showing stderr because using "-qq" and redirecting stderr to /dev/null meant the user could never see why an install was failing.
+    #We're returning to showing stderr because using "-qq" and redirecting stderr to /dev/null meant the user could never see why an install was failing.
         while ! $SUDO apt-get -q -y update >/dev/null ; do
             echo2 "Error updating package metadata, perhaps because a system update is running; will wait 60 seconds and try again."
             sleep 60
