@@ -231,11 +231,22 @@ warn_free_space_GB() {
 	return 0
 }
 
-warn_network_in_use() {
-	# Docker will claim networks if they're specified in a COMPOSE_FILE.
+warn_docker_network_in_use() {
+	# Docker will claim networks if they're specified in a COMPOSE_FILE,
+    # otherwise, Docker will claim a network from the pool defined in /etc/docker/daemon.json
 	# Customers have been known to lose network connectivity to VPNs
 	# if the VPN uses the claimed subnet. This function checks for and
 	# warns the user if subnets could be claimed during installation.
+
+    # If the user has configured the Docker daemon to use a non-default address pool,
+    # disable the warning. The user has likely fixed any colliding network issues already.
+    # To verify this would require JSON parsing and subnet calculations. Rather than
+    # installing extra dependencies and performing extra checks, we hope for the best.
+    if [ -f /etc/docker/daemon.json ] && grep -q "default-address-pools" /etc/docker/daemon.json; then
+        return 0
+    fi
+
+    require_sudo
 
 	# Set up local variables for arguments, ip routes, and grep matches
 	local subnets="$@"
@@ -243,7 +254,7 @@ warn_network_in_use() {
 	local matches=""
 
 	# Also check against docker networks
-	local docker_networks=`for i in $(sudo docker network ls -q); do sudo docker network inspect -f '{{(index .IPAM.Config 0).Subnet}}' $i 2>/dev/null; done`
+	local docker_networks=`for i in $($SUDO docker network ls -q); do $SUDO docker network inspect -f '{{(index .IPAM.Config 0).Subnet}}' $i 2>/dev/null; done`
 
 	#echo $docker_networks
 
@@ -258,12 +269,12 @@ warn_network_in_use() {
 	# Output warning if matches string is longer than 0 characters
 	if [ ${#matches} -gt 0 ]; then
 		echo
-		echo -e "\e[93mWARNING\e[0m: The installer checks for subnets in use which may be claimed"
+		echo -e "\e[93mWARNING\e[0m: This script checks for subnets in use which may be claimed"
 		echo "         by the Docker configuration. The following subnet(s) were"
 		echo "         found to be in use by the system:"
 		echo -e "\n$matches"
-		echo "         If network connectivity is disrupted (such as VPN connections),"
-		echo "         check the Docker configuration and change to a different subnet."
+        echo "         This script may disrupt network connectivity (such as VPN connections)."
+		echo "         To prevent this, exit this script and edit the default address pool used by Docker."
 		echo
 		echo "         For more information, please refer to our FAQ for more information:"
 		echo "         https://portal.activecountermeasures.com/support/faq/?Display_FAQ=3350"
