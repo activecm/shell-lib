@@ -402,6 +402,9 @@ ensure_common_tools_installed () {
             else
                 #Adjust package list for 18.04 and above
                 ubuntu_tools="$ubuntu_tools coreutils"
+                if [ "$VERSION_CODENAME" = "focal" ]; then				#Ubuntu 20.04 LTS needs a key imported for the install to work.
+                    $SUDO apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 656408E390CFB1F5
+                fi
             fi
         fi
 
