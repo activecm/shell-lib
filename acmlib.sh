@@ -206,7 +206,7 @@ require_free_space_MB() {
 
 warn_free_space_GB() {
     # Some directories will require a large amount of storage space, but only after
-    # Zeek and AI-Hunter have been running for long enough to generate a good
+    # Zeek and AC-Hunter have been running for long enough to generate a good
     # amount of logs and databases. Thus, we only want to WARN the user at the end
     # without pausing the installer.
 
@@ -221,7 +221,7 @@ warn_free_space_GB() {
             # Print a warning. Use ANSI escape sequence [93m for bright yello, and [0m to reset:
             echo
             echo -e "\e[93mWARNING\e[0m: $one_dir does not have at least ${gb}GB of free space."
-            echo "         AI-Hunter will still install successfully,"
+            echo "         AC-Hunter will still install successfully,"
             echo "         but you may need to frequently remove old data from $one_dir."
             echo "         Consider increasing the amount of space available in $one_dir."
             echo
