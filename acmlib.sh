@@ -26,8 +26,9 @@ askYN () {
 fail () {
     # Displays the passed in error and asks the user if they'd like to continue
     # the script. Will exit with error code 1 if the user stops the script.
-    echo "$*" >&2
-    echo "This is normally an unrecoverable problem, and we recommend fixing the problem and restarting the script. Please contact technical support for help in resolving the issue. If you feel the script should continue, enter   Y   and the script will attempt to finish. Entering   N    will cause this script to exit." >&2
+    echo
+    echo -e "\e[91mERROR\e[0m: $*" >&2
+    echo "We recommend fixing the problem and restarting the install script. Would you like to continue anyway (Y) or stop the installation (N)?" >&2
     if askYN ; then
         echo "Script will continue at user request. This may not result in a working configuration." >&2
         sleep 5
