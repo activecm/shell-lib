@@ -342,6 +342,13 @@ require_sudo () {
     fail 'Missing administrator priviledges. Please run with an account with sudo privilidges.'
 }
 
+require_selinux_permissive () {
+    # If SELinux is installed and in enforcing mode, fail and notify the user to set it to permissive.
+    if [ -n "`type -path sestatus`" ] && [ `sestatus | grep -i '^Current mode' | awk '{print $3}'` = "enforcing" ]; then
+        fail "`hostname` is running SELinux in enforcing mode. Please run 'setenforce permissive' on all systems and restart the installer."
+    fi
+}
+
 require_executable_tmp_dir () {
     NEWTMP="$HOME/.tmp"
     if [ -n "$TMPDIR" ] && findmnt -n -o options -T "$TMPDIR" | grep -qvE '(^|,)noexec($|,)' ; then
