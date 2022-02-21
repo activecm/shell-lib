@@ -43,8 +43,8 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-# Check architecture to ensure amd64
-if [ "$(arch)" != "x86_64" ]; then
+# Check architecture to ensure 64 bit platform
+if [ "$(arch)" != "x86_64" -a "$(arch)" != "aarch64" ]; then
 	echo "Docker installation is only supported on 64-bit CPU architectures."
 	exit 1
 fi
@@ -75,7 +75,7 @@ elif [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release ; th
 		fi
 	fi
 
-	$SUDO yum -y -q -e 0 install yum-utils device-mapper-persistent-data lvm2 shadow-utils
+	$SUDO yum -y -q -e 0 install yum-utils device-mapper-persistent-data lvm2 shadow-utils python3-pip
 
 	$SUDO yum-config-manager -q --enable extras >/dev/null
 
@@ -97,14 +97,25 @@ elif [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-relea
 		apt-transport-https \
 		ca-certificates \
 		curl \
-		software-properties-common
+		software-properties-common \
+		python3-pip
 
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | $SUDO apt-key add -
 
-	$SUDO add-apt-repository \
-		"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-		$(lsb_release -cs) \
-		stable"
+	if [ "$(uname -m)" = "x86_64" ]; then
+		$SUDO add-apt-repository \
+			"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+			$(lsb_release -cs) \
+			stable"
+	elif [ "$(uname -m)" = "aarch64" ]; then
+		$SUDO add-apt-repository \
+			"deb [arch=arm64] https://download.docker.com/linux/ubuntu \
+			$(lsb_release -cs) \
+			stable"
+	else
+		echo "Unknown 64 bit architecture, exiting."
+		exit 1
+	fi
 
 	echo "Installing latest Docker version..."
 	$SUDO apt-get -qq update > /dev/null 2>&1
@@ -135,8 +146,13 @@ else
 	DOCKER_COMPOSE_VERSION="1.25.5"
 
 	echo "Installing Docker-Compose v${DOCKER_COMPOSE_VERSION}..."
-	$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
-	$SUDO chmod +x /usr/bin/docker-compose
+	if [ "$(uname -m)" = "x86_64" ]; then
+		$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+		$SUDO chmod +x /usr/bin/docker-compose
+	else
+		#github doesn't have aarch64 binary releases for docker-compose, install via pip3 instead
+		$SUDO pip3 install docker-compose==${DOCKER_COMPOSE_VERSION}
+	fi
 fi
 
 if [ "${ADD_DOCKER_GROUP}" = "true" ]; then
