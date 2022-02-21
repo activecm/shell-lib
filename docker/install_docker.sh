@@ -146,13 +146,15 @@ else
 	DOCKER_COMPOSE_VERSION="1.25.5"
 
 	echo "Installing Docker-Compose v${DOCKER_COMPOSE_VERSION}..."
-	if [ "$(uname -m)" = "x86_64" ]; then
-		$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
-		$SUDO chmod +x /usr/bin/docker-compose
-	else
-		#github doesn't have aarch64 binary releases for docker-compose, install via pip3 instead
-		$SUDO pip3 install docker-compose==${DOCKER_COMPOSE_VERSION}
-	fi
+	#if [ "$(uname -m)" = "x86_64" ]; then
+	#	$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+	#	$SUDO chmod +x /usr/bin/docker-compose
+	#else
+
+	#github doesn't have aarch64 binary releases for docker-compose, install via pip3 instead (on every architecture, to simplify this script)
+	$SUDO pip3 install docker-compose==${DOCKER_COMPOSE_VERSION}
+
+	#fi
 fi
 
 if [ "${ADD_DOCKER_GROUP}" = "true" ]; then
