@@ -152,6 +152,7 @@ else
 	#else
 
 	#github doesn't have aarch64 binary releases for docker-compose, install via pip3 instead (on every architecture, to simplify this script)
+	$SUDO pip3 install --upgrade pip
 	$SUDO pip3 install docker-compose==${DOCKER_COMPOSE_VERSION}
 
 	#fi
