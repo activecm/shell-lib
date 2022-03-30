@@ -169,6 +169,12 @@ sys.exit(1)
 	else 
 		fail 'docker-compose could not be automatically installed on this system. Please install it manually and re-run the script.'
 	fi
+
+	# Some OS don't insert /usr/local/bin into the PATH when running SUDO (CentOS)
+	# Provide a symlink in /usr/bin in order to get around this issue.
+	if [ ! -e /usr/bin/docker-compose ]; then 
+    	$SUDO ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+	fi
 fi
 
 if [ "${ADD_DOCKER_GROUP}" = "true" ]; then
