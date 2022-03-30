@@ -160,8 +160,14 @@ sys.exit(1)
 "
 	if python3 -c "$PYTHON_VERSION_TEST"; then 
 		# prefer to install with pip3 if possible since github doesn't have aarch64 binary releases for docker-compose
-		$SUDO pip3 install --upgrade pip
-		$SUDO pip3 install docker-compose==${DOCKER_COMPOSE_VERSION}
+
+		# pip3 recommends -H when running with sudo to prevent creating root owned files in the user's home dir
+		PIP3_CMD="pip3"
+		if [ -n "$SUDO" ]; then
+			PIP3_CMD="$SUDO -H $PIP3_CMD"
+		fi
+		$PIP3_CMD install --upgrade pip
+		$PIP3_CMD install docker-compose==${DOCKER_COMPOSE_VERSION}
 	elif [ "$(uname -m)" = "x86_64" ]; then
 		# if we are on x86, download docker-compose from Github
 		$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
