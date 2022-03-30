@@ -146,16 +146,41 @@ else
 	DOCKER_COMPOSE_VERSION="1.25.5"
 
 	echo "Installing Docker-Compose v${DOCKER_COMPOSE_VERSION}..."
-	#if [ "$(uname -m)" = "x86_64" ]; then
-	#	$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
-	#	$SUDO chmod +x /usr/bin/docker-compose
-	#else
 
-	#github doesn't have aarch64 binary releases for docker-compose, install via pip3 instead (on every architecture, to simplify this script)
-	$SUDO pip3 install --upgrade pip
-	$SUDO pip3 install docker-compose==${DOCKER_COMPOSE_VERSION}
+	# Check if the latest version of pip is supported by the version of python installed
+	# In particular, Ubuntu 16's version of python (v3.5) does not support the latest verison of pip
+	MIN_PYTHON_VERSION_MAJOR=3
+	MIN_PYTHON_VERSION_MINOR=6
+	PYTHON_VERSION_TEST="
+import sys
+if  (sys.version_info.major > $MIN_PYTHON_VERSION_MAJOR or 
+	(sys.version_info.major == $MIN_PYTHON_VERSION_MAJOR and sys.version_info.minor >= $MIN_PYTHON_VERSION_MINOR)): 
+	sys.exit(0)
+sys.exit(1)
+"
+	if python3 -c "$PYTHON_VERSION_TEST"; then 
+		# prefer to install with pip3 if possible since github doesn't have aarch64 binary releases for docker-compose
 
-	#fi
+		# pip3 recommends -H when running with sudo to prevent creating root owned files in the user's home dir
+		PIP3_CMD="python3 -m pip"
+		if [ -n "$SUDO" ]; then
+			PIP3_CMD="$SUDO -H $PIP3_CMD"
+		fi
+		$PIP3_CMD install --upgrade pip
+		$PIP3_CMD install --no-warn-script-location docker-compose==${DOCKER_COMPOSE_VERSION}
+	elif [ "$(uname -m)" = "x86_64" ]; then
+		# if we are on x86, download docker-compose from Github
+		$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+		$SUDO chmod +x /usr/local/bin/docker-compose
+	else 
+		fail 'docker-compose could not be automatically installed on this system. Please install it manually and re-run the script.'
+	fi
+
+	# Some OS don't insert /usr/local/bin into the PATH when running SUDO (CentOS)
+	# Provide a symlink in /usr/bin in order to get around this issue.
+	if [ ! -e /usr/bin/docker-compose ]; then 
+    	$SUDO ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+	fi
 fi
 
 if [ "${ADD_DOCKER_GROUP}" = "true" ]; then
