@@ -162,7 +162,7 @@ sys.exit(1)
 		# prefer to install with pip3 if possible since github doesn't have aarch64 binary releases for docker-compose
 
 		# pip3 recommends -H when running with sudo to prevent creating root owned files in the user's home dir
-		PIP3_CMD="pip3"
+		PIP3_CMD="python3 -m pip"
 		if [ -n "$SUDO" ]; then
 			PIP3_CMD="$SUDO -H $PIP3_CMD"
 		fi
