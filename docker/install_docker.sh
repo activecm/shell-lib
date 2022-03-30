@@ -167,7 +167,7 @@ sys.exit(1)
 			PIP3_CMD="$SUDO -H $PIP3_CMD"
 		fi
 		$PIP3_CMD install --upgrade pip
-		$PIP3_CMD install docker-compose==${DOCKER_COMPOSE_VERSION}
+		$PIP3_CMD install --no-warn-script-location docker-compose==${DOCKER_COMPOSE_VERSION}
 	elif [ "$(uname -m)" = "x86_64" ]; then
 		# if we are on x86, download docker-compose from Github
 		$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
