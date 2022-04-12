@@ -108,13 +108,13 @@ can_ssh () {
         return 1
     fi
 
-    local token="$RANDOM.$RANDOM"
     echo2 "Verifying that we can ssh to $1 - you may need to provide a password to access this system."
-    ssh_out=`ssh "$@" '/bin/echo '"$token"`
-    if [ "$token" = "$ssh_out" ]; then
+
+    if ssh "$@" 'exit 0'; then
         # SSH successful
         return 0
     fi
+
     return 1
 }
 
