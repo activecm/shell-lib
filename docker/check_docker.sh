@@ -5,6 +5,7 @@
 # 3 not installed
 # 4 older than required minimum version
 # 5 newer than required maximum version
+# 6 Docker is installed via snap, which is incompatible with ActiveCM software
 
 if [ ! -x "$(command -v docker)" ]; then
 	exit 3
@@ -26,6 +27,8 @@ if [ "$VERSION_MAJOR" -lt "$MIN_VERSION_MAJOR" ] ||
 # elif [ "$VERSION_MAJOR" -gt "$MAX_VERSION_MAJOR" ] ||
 # 	[ "$VERSION_MAJOR" -eq "$MAX_VERSION_MAJOR" -a "$VERSION_MINOR" -gt "$MAX_VERSION_MINOR" ]; then
 # 	exit 5
+elif [ "$(command -v docker)" = "/snap/bin/docker" ]; then
+	exit 6
 else
 	exit 0
 fi

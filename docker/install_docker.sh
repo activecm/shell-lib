@@ -58,6 +58,10 @@ if [ "$DOCKER_CHECK" -gt 3 ]; then
 	# This may overwrite a file maintained by a package.
 	echo "An unsupported version of Docker appears to already be installed. It will be replaced."
 fi
+if [ "$DOCKER_CHECK" -eq 6 ]; then 
+	echo "Docker is installed via snap, which is incompatible with ActiveCM software. Removing Docker via snap."
+	$SUDO snap remove docker
+fi
 if [ "$DOCKER_CHECK" -eq 0 ]; then
 	echo "Docker appears to already be installed. Skipping."
 elif [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release ; then
