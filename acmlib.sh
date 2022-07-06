@@ -344,7 +344,7 @@ require_sudo () {
 
 require_selinux_permissive () {
     # If SELinux is installed and in enforcing mode, fail and notify the user to set it to permissive.
-    if [ -n "`type -path sestatus`" ] && [ `sestatus | grep -i '^Current mode' | awk '{print $3}'` = "enforcing" ]; then
+    if [ -n "`type -path sestatus`" ] && [ `sestatus | grep -E -i '(^Current mode|^SELinux status)' | awk '{print $3}'` = "enforcing" ]; then
         fail "`hostname` is running SELinux in enforcing mode. Please run 'setenforce permissive' on all systems and restart the installer."
     fi
 }
