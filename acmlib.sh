@@ -393,7 +393,7 @@ ensure_common_tools_installed () {
 
     local ubuntu_tools="gdb wget curl make netcat lsb-release rsync unzip tar"
     local centos_tools="gdb wget curl make nmap-ncat coreutils iproute redhat-lsb-core rsync unzip tar"
-    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
+    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr tzdata unzip wc wget"
     if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
         #We have apt-get, good.
 
