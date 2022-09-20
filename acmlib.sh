@@ -385,6 +385,26 @@ can_write_or_create () {
     fi
 }
 
+install_tzdata() {
+	# attempt to install tzdata on ubuntu as it can be missing on some barebone installs
+	if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
+		# set env variables to install tzdata without a prompt
+		export DEBIAN_FRONTEND=noninteractive
+		# set timezone to UTC
+		export TZ=Etc/UTC
+		if [ ! -f /etc/localtime ]; then
+			$SUDO apt-get -q -y install tzdata
+		fi
+		# check if tzdata successfully installed
+		if [ ! -f /etc/localtime ]; then
+			echo "WARNING: Unable to install tzdata" >&2
+			return 1
+		fi
+		export DEBIAN_FRONTEND=""
+		export TZ=""
+	fi
+}
+
 ensure_common_tools_installed () {
     #Installs common tools used by acm scripts. Supports yum and apt-get.
     #Stops the script if neither apt-get nor yum exist.
@@ -393,7 +413,8 @@ ensure_common_tools_installed () {
 
     local ubuntu_tools="gdb wget curl make netcat lsb-release rsync unzip tar"
     local centos_tools="gdb wget curl make nmap-ncat coreutils iproute redhat-lsb-core rsync unzip tar"
-    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr tzdata unzip wc wget"
+    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
+    install_tzdata
     if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
         #We have apt-get, good.
 
