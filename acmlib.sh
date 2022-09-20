@@ -385,36 +385,15 @@ can_write_or_create () {
     fi
 }
 
-install_tzdata() {
-	# attempt to install tzdata on ubuntu as it can be missing on some barebone installs
-	if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
-		# set env variables to install tzdata without a prompt
-		export DEBIAN_FRONTEND=noninteractive
-		# set timezone to UTC
-		export TZ=Etc/UTC
-		if [ ! -f /etc/localtime ]; then
-			$SUDO apt-get -q -y install tzdata
-		fi
-		# check if tzdata successfully installed
-		if [ ! -f /etc/localtime ]; then
-			echo "WARNING: Unable to install tzdata" >&2
-			return 1
-		fi
-		export DEBIAN_FRONTEND=""
-		export TZ=""
-	fi
-}
-
 ensure_common_tools_installed () {
     #Installs common tools used by acm scripts. Supports yum and apt-get.
     #Stops the script if neither apt-get nor yum exist.
 
     require_sudo
 
-    local ubuntu_tools="gdb wget curl make netcat lsb-release rsync unzip tar"
-    local centos_tools="gdb wget curl make nmap-ncat coreutils iproute redhat-lsb-core rsync unzip tar"
+    local ubuntu_tools="gdb wget curl iproute2 make netcat lsb-release openssh-client rsync unzip tar tzdata"
+    local centos_tools="gdb wget curl make nmap-ncat coreutils iproute redhat-lsb-core openssh-clients rsync unzip tar tzdata"
     local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
-    install_tzdata
     if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
         #We have apt-get, good.
 
@@ -437,7 +416,10 @@ ensure_common_tools_installed () {
             fi
         fi
 
-    #We're returning to showing stderr because using "-qq" and redirecting stderr to /dev/null meant the user could never see why an install was failing.
+        # set env variables to install without prompts (e.g. tzdata)
+        export DEBIAN_FRONTEND=noninteractive  # this only applies to child processes. There is no need to reset it back to its original state.
+
+        #We're returning to showing stderr because using "-qq" and redirecting stderr to /dev/null meant the user could never see why an install was failing.
         while ! $SUDO apt-get -q -y update >/dev/null ; do
             echo2 "Error updating package metadata, perhaps because a system update is running; will wait 60 seconds and try again."
             sleep 60
@@ -456,12 +438,19 @@ ensure_common_tools_installed () {
 
         $SUDO yum -q -e 0 makecache > /dev/null 2>&1
         #Yum takes care of the lock loop for us
-        $SUDO yum -y -q -e 0 install $centos_tools
+        #--skip-broken prevents any attempts to install uninstallable packages (the user may have conflicting packages installed)
+        $SUDO yum -y -q -e 0 --skip-broken install $centos_tools
     else
         fail "Neither (apt-get and dpkg-query) nor (yum, rpm, and yum-config-manager) is installed on the system"
     fi
 
     require_util $required_tools
+
+    # handle tzdata which does not install an executable on the system
+    if [ ! -e "/etc/localtime" ]; then  # use -e to cover both symlinks and regular files
+        fail "Missing utility tzdata. Please install it."
+    fi
+
     return 0
 }
 
