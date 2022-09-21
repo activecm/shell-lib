@@ -416,21 +416,31 @@ ensure_common_tools_installed () {
             fi
         fi
         
-        # set env variables to install without prompts (e.g. tzdata)
-        local old_deb_frontend="$DEBIAN_FRONTEND"
-        export DEBIAN_FRONTEND=noninteractive
+        
 
         #We're returning to showing stderr because using "-qq" and redirecting stderr to /dev/null meant the user could never see why an install was failing.
         while ! $SUDO apt-get -q -y update >/dev/null ; do
             echo2 "Error updating package metadata, perhaps because a system update is running; will wait 60 seconds and try again."
             sleep 60
         done
-        while ! $SUDO apt-get -q -y install $ubuntu_tools >/dev/null ; do
-            echo2 "Error installing packages, perhaps because a system update is running; will wait 60 seconds and try again."
-            sleep 60
-        done
 
-        export DEBIAN_FRONTEND="$old_deb_frontend"
+        if [ -z "$SUDO" ]; then # split out the case for when sudo is not set in order to avoid command parsing issues
+            # set env variables to install without prompts (e.g. tzdata)
+            local old_deb_frontend="$DEBIAN_FRONTEND"
+            export DEBIAN_FRONTEND=noninteractive
+
+            while ! apt-get -q -y install $ubuntu_tools >/dev/null ; do
+                echo2 "Error installing packages, perhaps because a system update is running; will wait 60 seconds and try again."
+                sleep 60
+            done
+
+            export DEBIAN_FRONTEND="$old_deb_frontend"
+        else
+            while ! $SUDO DEBIAN_FRONTEND=noninteractive apt-get -q -y install $ubuntu_tools >/dev/null; do
+                echo2 "Error installing packages, perhaps because a system update is running; will wait 60 seconds and try again."
+                sleep 60
+            done
+        fi      
 
     elif [ -x /usr/bin/yum -a -x /bin/rpm ]; then
         #We have yum, good.
