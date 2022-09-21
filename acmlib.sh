@@ -415,9 +415,10 @@ ensure_common_tools_installed () {
                 fi
             fi
         fi
-
+        
         # set env variables to install without prompts (e.g. tzdata)
-        export DEBIAN_FRONTEND=noninteractive  # this only applies to child processes. There is no need to reset it back to its original state.
+        local old_deb_frontend="$DEBIAN_FRONTEND"
+        export DEBIAN_FRONTEND=noninteractive
 
         #We're returning to showing stderr because using "-qq" and redirecting stderr to /dev/null meant the user could never see why an install was failing.
         while ! $SUDO apt-get -q -y update >/dev/null ; do
@@ -428,6 +429,9 @@ ensure_common_tools_installed () {
             echo2 "Error installing packages, perhaps because a system update is running; will wait 60 seconds and try again."
             sleep 60
         done
+
+        export DEBIAN_FRONTEND="$old_deb_frontend"
+
     elif [ -x /usr/bin/yum -a -x /bin/rpm ]; then
         #We have yum, good.
 
