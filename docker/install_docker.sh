@@ -147,7 +147,7 @@ if [ "$DOCKER_COMPOSE_CHECK" -eq 0 ]; then
 else
 	### Install Docker-Compose ###
 	# https://docs.docker.com/compose/install/#install-compose
-	DOCKER_COMPOSE_VERSION="1.25.5"
+	DOCKER_COMPOSE_VERSION="1.29.2"
 
 	echo "Installing Docker-Compose v${DOCKER_COMPOSE_VERSION}..."
 
