@@ -291,7 +291,7 @@ warn_docker_network_in_use() {
 }
 
 check_os_is_centos () {
-    [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release
+    [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-release
 }
 
 check_os_is_ubuntu () {

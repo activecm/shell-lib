@@ -64,7 +64,7 @@ if [ "$DOCKER_CHECK" -eq 6 ]; then
 fi
 if [ "$DOCKER_CHECK" -eq 0 ]; then
 	echo "Docker appears to already be installed. Skipping."
-elif [ -s /etc/redhat-release ] && grep -iq 'release 7' /etc/redhat-release ; then
+elif [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-release ; then
 	#This configuration file is used in both Redhat RHEL and Centos distributions, so we're running under RHEL/Centos 7.x
 	# https://docs.docker.com/engine/installation/linux/docker-ce/centos/
 
