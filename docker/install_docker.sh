@@ -68,6 +68,16 @@ elif [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-r
 	#This configuration file is used in both Redhat RHEL and Centos distributions, so we're running under RHEL/Centos 7.x
 	# https://docs.docker.com/engine/installation/linux/docker-ce/centos/
 
+	# Removing podman and buildah packages
+	if rpm -q podman >/dev/null 2>&1 || rpm -q buildah >/dev/null 2>&1; then
+		echo -n "One or more of these packages are installed: podman, buildah. The docker installation may not work with these packages installed. Would you like to remove them? (recommended: yes)"
+		if askYN ; then
+			$SUDO yum -y -q -e 0 remove podman buildah
+		else
+			echo "You chose not to remove the podman and buildah packages. The install may not succeed."
+		fi
+	fi
+
     $SUDO yum -q -e 0 makecache fast > /dev/null 2>&1
 
 	if rpm -q docker >/dev/null 2>&1 || rpm -q docker-common >/dev/null 2>&1 || rpm -q docker-selinux >/dev/null 2>&1 || rpm -q docker-engine >/dev/null 2>&1 ; then
