@@ -450,6 +450,12 @@ ensure_common_tools_installed () {
             $SUDO yum -y -q -e 0 install yum-utils
         fi
 
+        #Addresses AC-Hunter issue #2185
+        if [ -x /usr/bin/subscription-manager ]; then		#Only attempt this on RHEL, not Centos or other clones
+            #Note, when extending to other RHEL releases (>7.x) we'll need to test for the release version and adjust the repository name.
+            $SUDO subscription-manager repos --enable=rhel-7-server-extras-rpms
+        fi
+
         $SUDO yum -q -e 0 makecache > /dev/null 2>&1
         #Yum takes care of the lock loop for us
         #--skip-broken prevents any attempts to install uninstallable packages (the user may have conflicting packages installed)
