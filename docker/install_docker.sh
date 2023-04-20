@@ -179,8 +179,7 @@ else
 	# Update package lists again because docker adds the docker-compose-plugin repo
 	# Install docker-compose-plugin
 	if [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-release ; then
-		# TODO: add silencing flags
-		$SUDO yum update
+		$SUDO yum -y -q update
 		$SUDO yum -y -q -e 0 install docker-compose-plugin
 	elif [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
 		$SUDO apt-get -qq update > /dev/null 2>&1
@@ -198,8 +197,9 @@ else
     	$SUDO ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 	fi
 
-	$SUDO chown "$USER":"$USER" /home/"$USER"/.docker -R
-	$SUDO chmod g+rwx "/home/$USER/.docker" -R
+	$SUDO mkdir -p "$HOME"/.docker
+	$SUDO chown "$USER":"$USER" "$HOME"/.docker -R
+	$SUDO chmod g+rwx "$HOME"/.docker -R
 	
 fi
 

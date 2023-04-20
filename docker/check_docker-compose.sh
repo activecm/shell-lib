@@ -5,6 +5,7 @@
 # 3 not installed
 # 4 older than required minimum version
 # 5 newer than required maximum version
+# 6 conflicting installs, both compose @v1 and @v2 are installed
 
 # verify that docker-compose is executable
 if [ ! -x "$(command -v docker-compose)" ]; then
@@ -19,6 +20,11 @@ fi
 # verify that docker compose (v2) is callable
 if ! docker compose version > /dev/null 2>&1 ; then
 	exit 4
+fi
+
+# verify that docker compose & docker-compose aren't both installed
+if docker-compose version | grep '^docker-compose .* [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*' ; then
+	exit 6
 fi
 
 MIN_VERSION_MAJOR=2
