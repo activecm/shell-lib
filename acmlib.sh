@@ -295,7 +295,7 @@ check_os_is_centos () {
 }
 
 check_os_is_ubuntu () {
-    grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release
+    [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release
 }
 
 require_supported_os () {
