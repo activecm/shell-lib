@@ -23,7 +23,7 @@ if ! docker compose version > /dev/null 2>&1 ; then
 fi
 
 # verify that docker compose & docker-compose aren't both installed
-if docker-compose version | grep '^docker-compose .* [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*' ; then
+if docker-compose version | grep -q '^docker-compose .* [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*' ; then
 	exit 6
 fi
 
