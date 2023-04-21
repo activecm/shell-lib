@@ -89,7 +89,7 @@ elif [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-r
 		fi
 	fi
 
-	$SUDO yum -y -q -e 0 install yum-utils device-mapper-persistent-data lvm2 shadow-utils python3-pip
+	$SUDO yum -y -q -e 0 install yum-utils device-mapper-persistent-data lvm2 shadow-utils
 
 	$SUDO yum-config-manager -q --enable extras >/dev/null
 
@@ -111,8 +111,7 @@ elif [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-relea
 		apt-transport-https \
 		ca-certificates \
 		curl \
-		software-properties-common \
-		python3-pip
+		software-properties-common 
 
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | $SUDO apt-key add -
 
@@ -156,45 +155,52 @@ if [ "$DOCKER_COMPOSE_CHECK" -eq 0 ]; then
 	echo "Docker-Compose appears to already be installed. Skipping."
 else
 	### Install Docker-Compose ###
-	# https://docs.docker.com/compose/install/#install-compose
-	DOCKER_COMPOSE_VERSION="1.29.2"
+	# https://docs.docker.com/compose/install/linux/	
 
-	echo "Installing Docker-Compose v${DOCKER_COMPOSE_VERSION}..."
+	echo "Installing Docker Compose..."
 
-	# Check if the latest version of pip is supported by the version of python installed
-	# In particular, Ubuntu 16's version of python (v3.5) does not support the latest verison of pip
-	MIN_PYTHON_VERSION_MAJOR=3
-	MIN_PYTHON_VERSION_MINOR=6
-	PYTHON_VERSION_TEST="
-import sys
-if  (sys.version_info.major > $MIN_PYTHON_VERSION_MAJOR or 
-	(sys.version_info.major == $MIN_PYTHON_VERSION_MAJOR and sys.version_info.minor >= $MIN_PYTHON_VERSION_MINOR)): 
-	sys.exit(0)
-sys.exit(1)
-"
-	if python3 -c "$PYTHON_VERSION_TEST"; then 
-		# prefer to install with pip3 if possible since github doesn't have aarch64 binary releases for docker-compose
-
-		# pip3 recommends -H when running with sudo to prevent creating root owned files in the user's home dir
-		PIP3_CMD="python3 -m pip"
-		if [ -n "$SUDO" ]; then
-			PIP3_CMD="$SUDO -H $PIP3_CMD"
-		fi
-		$PIP3_CMD install --upgrade pip
-		$PIP3_CMD install --no-warn-script-location docker-compose==${DOCKER_COMPOSE_VERSION}
-	elif [ "$(uname -m)" = "x86_64" ]; then
-		# if we are on x86, download docker-compose from Github
-		$SUDO_E curl --silent -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
-		$SUDO chmod +x /usr/local/bin/docker-compose
-	else 
-		fail 'docker-compose could not be automatically installed on this system. Please install it manually and re-run the script.'
+	# Uninstall docker-compose@v1 installed via pip
+	PIP3_CMD="python3 -m pip"
+	if [ -n "$SUDO" ]; then
+		PIP3_CMD="$SUDO -H $PIP3_CMD"
 	fi
 
-	# Some OS don't insert /usr/local/bin into the PATH when running SUDO (CentOS)
-	# Provide a symlink in /usr/bin in order to get around this issue.
+	# Check if pip is callable
+	if "$PIP3_CMD" --version > /dev/null 2>&1 ; then 
+		# Check if docker-compose is installed via pip
+		if [ "$PIP3_CMD" list | grep -s "docker-compose" ]; then
+			# Attempt to uninstall docker-compose
+			if [ "$PIP3_CMD" uninstall docker-compose ]; then
+				echo "Uninstalled docker-compose@v1"
+			fi
+		fi
+	fi
+
+	# Update package lists again because docker adds the docker-compose-plugin repo
+	# Install docker-compose-plugin
+	if [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-release ; then
+		$SUDO yum -y -q update
+		$SUDO yum -y -q -e 0 install docker-compose-plugin
+	elif [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
+		$SUDO apt-get -qq update > /dev/null 2>&1
+		$SUDO apt-get -qq install docker-compose-plugin
+	fi
+	
+	# Create alias for docker-compose to call docker compose
+	echo 'docker compose "$@"' | $SUDO tee /usr/local/bin/docker-compose > /dev/null
+
+	$SUDO chmod +x /usr/local/bin/docker-compose
+
+	#Some OS don't insert /usr/local/bin into the PATH when running SUDO (CentOS)
+	#Provide a symlink in /usr/bin in order to get around this issue.
 	if [ ! -e /usr/bin/docker-compose ]; then 
     	$SUDO ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 	fi
+
+	$SUDO mkdir -p "$HOME"/.docker
+	$SUDO chown "$USER":"$USER" "$HOME"/.docker -R
+	$SUDO chmod g+rwx "$HOME"/.docker -R
+	
 fi
 
 if [ "${ADD_DOCKER_GROUP}" = "true" ]; then
@@ -204,7 +210,7 @@ if [ "${ADD_DOCKER_GROUP}" = "true" ]; then
 	$SUDO usermod -aG docker $USER
 
 	if [ "${REPLACE_SHELL}" = "true" ]; then
-		echo "Docker installation complete. You should have access to the 'docker' and 'docker-compose' commands immediately."
+		echo "Docker installation complete. You should have access to the 'docker' and 'docker compose' commands immediately."
 		# Hack to activate the docker group on the current user without logging out.
 		# Downside is it completely replaces the shell and prevents calling scripts from continuing.
 		# https://superuser.com/a/853897
@@ -212,9 +218,9 @@ if [ "${ADD_DOCKER_GROUP}" = "true" ]; then
 	fi
 
 	echo "You will need to login again for these changes to take effect."
-	echo "Docker installation complete. You should have access to the 'docker' and 'docker-compose' commands once you log out and back in."
+	echo "Docker installation complete. You should have access to the 'docker' and 'docker compose' commands once you log out and back in."
 else
-	echo "Docker installation complete. 'docker' and 'docker-compose' must be run using sudo or the root account unless you have added your user to the 'docker' group."
+	echo "Docker installation complete. 'docker' and 'docker compose' must be run using sudo or the root account unless you have added your user to the 'docker' group."
 fi
 
 # Change back to original directory
