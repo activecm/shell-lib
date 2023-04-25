@@ -291,7 +291,7 @@ warn_docker_network_in_use() {
 }
 
 check_os_is_centos () {
-    [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-release
+    [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8\|release 9' /etc/redhat-release
 }
 
 check_os_is_ubuntu () {
@@ -303,11 +303,11 @@ require_supported_os () {
 
     #TODO: Test for minimum kernel version
     if check_os_is_centos ; then
-        echo2 "CentOS or Redhat 7 installation detected, good."
+        echo2 "CentOS or Redhat 7/8/9 installation detected, good."
     elif check_os_is_ubuntu ; then
         echo2 "Ubuntu installation detected, good."
     else
-        fail "This system does not appear to be a CentOS/ RHEL 7 or Ubuntu system"
+        fail "This system does not appear to be a CentOS/ RHEL 7/8/9 or Ubuntu system"
     fi
     return 0
 }
