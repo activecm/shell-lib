@@ -64,7 +64,7 @@ if [ "$DOCKER_CHECK" -eq 6 ]; then
 fi
 if [ "$DOCKER_CHECK" -eq 0 ]; then
 	echo "Docker appears to already be installed. Skipping."
-elif [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-release ; then
+elif [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8\|release 9' /etc/redhat-release ; then
 	#This configuration file is used in both Redhat RHEL and Centos distributions, so we're running under RHEL/Centos 7.x
 	# https://docs.docker.com/engine/installation/linux/docker-ce/centos/
 
@@ -101,7 +101,7 @@ elif [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-r
 	$SUDO rpm --import ~/DOCKER-GPG-KEY
 
 	$SUDO yum -y -q -e 0 install docker-ce
-elif [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
+elif [ -s /etc/os-release ] && grep -iq '^ID *= *ubuntu' /etc/os-release ; then
 	### Install Docker on Ubuntu ###
 	# https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
 
@@ -118,12 +118,12 @@ elif [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-relea
 	if [ "$(uname -m)" = "x86_64" ]; then
 		$SUDO add-apt-repository \
 			"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-			$(lsb_release -cs) \
+			$(grep -E '^VERSION_CODENAME=' /etc/os-release | cut -d '=' -f 2) \
 			stable"
 	elif [ "$(uname -m)" = "aarch64" ]; then
 		$SUDO add-apt-repository \
 			"deb [arch=arm64] https://download.docker.com/linux/ubuntu \
-			$(lsb_release -cs) \
+			$(grep -E '^VERSION_CODENAME=' /etc/os-release | cut -d '=' -f 2) \
 			stable"
 	else
 		echo "Unknown 64 bit architecture, exiting."
@@ -181,7 +181,7 @@ else
 	if [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-release ; then
 		$SUDO yum -y -q update
 		$SUDO yum -y -q -e 0 install docker-compose-plugin
-	elif [ -s /etc/lsb-release ] && grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release ; then
+	elif [ -s /etc/os-release ] && grep -iq '^ID *= *ubuntu' /etc/os-release ; then
 		$SUDO apt-get -qq update > /dev/null 2>&1
 		$SUDO apt-get -qq install docker-compose-plugin
 	fi

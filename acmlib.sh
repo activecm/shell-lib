@@ -291,11 +291,11 @@ warn_docker_network_in_use() {
 }
 
 check_os_is_centos () {
-    [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8' /etc/redhat-release
+    [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8\|release 9' /etc/redhat-release
 }
 
 check_os_is_ubuntu () {
-    grep -iq '^DISTRIB_ID *= *Ubuntu' /etc/lsb-release
+    grep -iq '^ID *= *ubuntu' /etc/os-release
 }
 
 require_supported_os () {
@@ -303,11 +303,11 @@ require_supported_os () {
 
     #TODO: Test for minimum kernel version
     if check_os_is_centos ; then
-        echo2 "CentOS or Redhat 7 installation detected, good."
+        echo2 "CentOS or Redhat 7/8/9 installation detected, good."
     elif check_os_is_ubuntu ; then
         echo2 "Ubuntu installation detected, good."
     else
-        fail "This system does not appear to be a CentOS/ RHEL 7 or Ubuntu system"
+        fail "This system does not appear to be a CentOS/ RHEL 7/8/9 or Ubuntu system"
     fi
     return 0
 }
@@ -391,9 +391,9 @@ ensure_common_tools_installed () {
 
     require_sudo
 
-    local ubuntu_tools="gdb wget curl iproute2 make netcat lsb-release openssh-client rsync unzip tar tzdata"
-    local centos_tools="gdb wget curl make nmap-ncat coreutils iproute redhat-lsb-core openssh-clients rsync unzip tar tzdata"
-    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip lsb_release make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
+    local ubuntu_tools="gdb wget curl iproute2 make netcat openssh-client rsync unzip tar tzdata"
+    local centos_tools="gdb wget curl make nmap-ncat coreutils iproute openssh-clients rsync unzip tar tzdata"
+    local required_tools="adduser awk cat chmod chown cp curl date egrep gdb getent grep ip make mkdir mv nc passwd printf rm rsync sed ssh-keygen sleep tar tee tr unzip wc wget"
     if [ -x /usr/bin/apt-get -a -x /usr/bin/dpkg-query ]; then
         #We have apt-get, good.
 
