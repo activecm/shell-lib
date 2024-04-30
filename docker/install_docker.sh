@@ -44,19 +44,39 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Check architecture to ensure 64 bit platform
-if [ "$(arch)" != "x86_64" -a "$(arch)" != "aarch64" ]; then
+if [ "$(arch)" != "x86_64" -a "$(arch)" != "aarch64" -a "$(arch)" != "arm64" ]; then
 	echo "Docker installation is only supported on 64-bit CPU architectures."
 	exit 1
 fi
+
+is_darwin=false
+if [ "$(uname -s)" = "Darwin" ]; then
+	is_darwin=true
+	# only allow zsh shells on macOS for compatibility, set as default since Catalina
+	if [ -z "$ZSH_VERSION" ]; then
+		echo "This does not appear to be a zsh shell. Please switch to a zsh terminal."
+		exit 1
+	fi
+fi
+
+MIN_DESKTOP_MAJOR_VERSION=4
+MIN_DESKTOP_MINOR_VERSION=28
 
 require_sudo
 
 # Store the exit code
 ./check_docker.sh
+
 DOCKER_CHECK=$?
 if [ "$DOCKER_CHECK" -gt 3 ]; then
-	# This may overwrite a file maintained by a package.
-	echo "An unsupported version of Docker appears to already be installed. It will be replaced."
+	# on macOS, tell the user to upgrade/downgrade Docker Desktop and then exit
+	if [ "$is_darwin" = true ]; then
+		echo "An unsupported version of Docker appears to already be installed. Please install a version of Docker Desktop >= $MIN_DESKTOP_MAJOR_VERSION.$MIN_DESKTOP_MINOR_VERSION" 
+		exit 1
+	else
+		# This may overwrite a file maintained by a package.
+		echo "An unsupported version of Docker appears to already be installed. It will be replaced."
+	fi
 fi
 if [ "$DOCKER_CHECK" -eq 6 ]; then 
 	echo "Docker is installed via snap, which is incompatible with ActiveCM software. Removing Docker via snap."
@@ -64,6 +84,24 @@ if [ "$DOCKER_CHECK" -eq 6 ]; then
 fi
 if [ "$DOCKER_CHECK" -eq 0 ]; then
 	echo "Docker appears to already be installed. Skipping."
+	# on macOS, start Docker Desktop and then exit
+	if [ "$is_darwin" = true ]; then
+		open -a Docker
+		exit 0
+	fi
+# The rest of the else-ifs handle new installs of Docker on different operating systems
+elif [ "$(uname -s)" = "Darwin" ]; then
+	# lead the user to the installer for Docker Desktop for their architecture
+	echo "macOS requires Docker Desktop to be installed."
+	if [ "$(arch)" = "arm64" ]; then
+		echo "Download Docker Desktop for Apple Silicon (M1):"
+		echo "https://desktop.docker.com/mac/main/arm64/Docker.dmg"
+	else 
+		echo "Download Docker Desktop for Intel Chips:"
+		echo "https://desktop.docker.com/mac/main/amd64/Docker.dmg"
+	fi
+	# exit installer for macOS systems
+	exit 1
 elif [ -s /etc/redhat-release ] && grep -iq 'release 7\|release 8\|release 9' /etc/redhat-release ; then
 	#This configuration file is used in both Redhat RHEL and Centos distributions, so we're running under RHEL/Centos 7.x
 	# https://docs.docker.com/engine/installation/linux/docker-ce/centos/
@@ -137,6 +175,9 @@ else
 	echo "This system does not appear to be a Centos 7.x, RHEL 7.x, or Ubuntu Linux system.  Unable to install docker."
 	exit 1
 fi
+
+
+# The rest of the script is further configuration for Linux only
 
 # Start the Docker service:
 echo "Starting the docker service..."
