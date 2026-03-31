@@ -49,8 +49,7 @@ fi
 if [ "$VERSION_MAJOR" -lt "$MIN_VERSION_MAJOR" ] ||
 	[ "$VERSION_MAJOR" -eq "$MIN_VERSION_MAJOR" -a "$VERSION_MINOR" -lt "$MIN_VERSION_MINOR" ]; then
 	exit 4
-elif [ "$VERSION_MAJOR" -gt "$MAX_VERSION_MAJOR" ] ||
-	[ "$VERSION_MAJOR" -eq "$MAX_VERSION_MAJOR" -a "$VERSION_MINOR" -gt "$MAX_VERSION_MINOR" ]; then
+elif [ "$VERSION_MAJOR" -gt "$MAX_VERSION_MAJOR" ]; then
 	exit 5
 else
 	exit 0
